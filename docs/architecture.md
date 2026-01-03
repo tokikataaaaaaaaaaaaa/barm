@@ -1,8 +1,9 @@
 # BARM - Architecture Design
 
-**バージョン:** 1.0
-**作成日:** 2026-01-02
-**ステータス:** Draft
+**Version:** 2.0
+**Created:** 2026-01-02
+**Updated:** 2026-01-03
+**Status:** Draft
 
 ---
 
@@ -11,84 +12,100 @@
 ### 1.1 Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         iOS App (Flutter)                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │    Auth     │  │   Mission   │  │    Group    │              │
-│  │   Feature   │  │   Feature   │  │   Feature   │              │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘              │
-│         │                │                │                      │
-│  ┌──────┴────────────────┴────────────────┴──────┐              │
-│  │              Riverpod Providers               │              │
-│  │         (State Management Layer)              │              │
-│  └──────────────────────┬────────────────────────┘              │
-│                         │                                        │
-│  ┌──────────────────────┴────────────────────────┐              │
-│  │              Repository Layer                  │              │
-│  │    (Firebase / RevenueCat Abstraction)        │              │
-│  └──────────────────────┬────────────────────────┘              │
-└─────────────────────────┼────────────────────────────────────────┘
-                          │
-          ┌───────────────┼───────────────┬───────────────┐
-          ▼               ▼               ▼               ▼
-   ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────┐
-   │  Firebase  │  │  Firebase  │  │  Firebase  │  │ RevenueCat │
-   │    Auth    │  │ Firestore  │  │    FCM     │  │            │
-   └────────────┘  └────────────┘  └────────────┘  └────────────┘
-          │               │               │               │
-          └───────────────┴───────────────┴───────────────┘
-                          │
-                    ┌─────┴─────┐
-                    │ App Store │
-                    │    IAP    │
-                    └───────────┘
++------------------------------------------+
+|         iOS App (Flutter Shell)          |
+|  +------------------------------------+  |
+|  |           WebView                  |  |
+|  |    (InAppWebView / webview_flutter)|  |
+|  |                                    |  |
+|  |   +----------------------------+   |  |
+|  |   |    Next.js Web App         |   |  |
+|  |   |    (React + TailwindCSS)   |   |  |
+|  |   +----------------------------+   |  |
+|  +------------------------------------+  |
+|                                          |
+|  +------------------------------------+  |
+|  |  Native Bridge (Payment/Push)     |  |
+|  |  - RevenueCat (App Store IAP)     |  |
+|  |  - FCM Token Retrieval            |  |
+|  +------------------------------------+  |
++------------------------------------------+
+              |
+              v
++------------------------------------------+
+|           Firebase (Web SDK)             |
+|  Auth / Firestore / Analytics            |
++------------------------------------------+
 ```
 
 ### 1.2 Tech Stack Summary
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **UI** | Flutter 3.x | クロスプラットフォームUI |
-| **State** | Riverpod | 状態管理、DI |
-| **Routing** | go_router | 宣言的ルーティング |
-| **Auth** | Firebase Auth | Apple Sign In |
-| **Database** | Firestore | NoSQL ドキュメントDB |
-| **Push** | FCM | プッシュ通知 |
-| **Analytics** | Firebase Analytics | イベント計測 |
-| **Crash** | Crashlytics | クラッシュレポート |
-| **Payment** | RevenueCat | サブスク管理 |
-| **Code Gen** | freezed, riverpod_generator | ボイラープレート削減 |
+| **Web UI** | Next.js 14 (App Router) | Webアプリケーション |
+| **Web Framework** | React 18 | UIライブラリ |
+| **Web Styling** | TailwindCSS + shadcn/ui | スタイリング |
+| **Web State** | Zustand or Jotai | クライアント状態管理 |
+| **Mobile Shell** | Flutter 3.x | iOS アプリシェル |
+| **WebView** | flutter_inappwebview | WebView実装 |
+| **Auth** | Firebase Auth (Web SDK) | Apple Sign In |
+| **Database** | Firestore (Web SDK) | NoSQL ドキュメントDB |
+| **Push** | FCM (Native Bridge経由) | プッシュ通知 |
+| **Analytics** | Firebase Analytics (Web SDK) | イベント計測 |
+| **Payment** | RevenueCat (Native) | サブスク管理 |
 
 ### 1.3 Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        User Action                           │
-│                    (Button Tap, Input)                       │
-└─────────────────────────────┬───────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        Widget                                │
-│              (ConsumerWidget / HookWidget)                   │
-│                  ref.read(provider)                          │
-└─────────────────────────────┬───────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Notifier / Controller                     │
-│              (AsyncNotifier / StateNotifier)                 │
-│                 Business Logic Here                          │
-└─────────────────────────────┬───────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       Repository                             │
-│           (FirestoreRepository, AuthRepository)              │
-│              Firebase SDK Abstraction                        │
-└─────────────────────────────┬───────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Firebase / RevenueCat                     │
-│                   (External Services)                        │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                       User Action                            |
+|                    (Button Click, Input)                     |
++------------------------------+------------------------------+
+                               |
+                               v
++-------------------------------------------------------------+
+|                    Next.js Web App                           |
+|              (React Components + Hooks)                      |
++------------------------------+------------------------------+
+                               |
+          +--------------------+--------------------+
+          |                                         |
+          v                                         v
++-----------------------+              +-----------------------+
+|   Firebase Web SDK    |              |   Native Bridge       |
+|   (Auth/Firestore/    |              |   (JavaScript Channel)|
+|    Analytics)         |              +-----------+-----------+
++-----------+-----------+                          |
+            |                                      v
+            v                          +-----------------------+
++-----------------------+              |   Flutter Native      |
+|   Firebase Backend    |              |   (RevenueCat/FCM)    |
++-----------------------+              +-----------+-----------+
+                                                   |
+                                                   v
+                                       +-----------------------+
+                                       |   App Store IAP       |
+                                       +-----------------------+
+```
+
+### 1.4 Communication Flow
+
+```
++-------------------+    JavaScript    +-------------------+
+|    Next.js App    | <-------------> |   Flutter Shell   |
+|    (WebView)      |     Channel     |   (Native Code)   |
++-------------------+                 +-------------------+
+        |                                      |
+        |  window.flutter_inappwebview         |
+        |  .callHandler('methodName', args)    |
+        |                                      |
+        +------------------------------------->+
+                                               |
+                                               v
+                                    +-------------------+
+                                    |  RevenueCat SDK   |
+                                    |  Firebase FCM     |
+                                    +-------------------+
 ```
 
 ---
@@ -99,12 +116,12 @@
 
 ```
 firestore/
-├── users/{userId}                    # ユーザー情報
-├── groups/{groupId}                  # グループ情報
-│   └── members/{userId}              # グループメンバー（サブコレクション）
-├── missions/{missionId}              # ミッション定義
-├── records/{recordId}                # 日々の記録
-└── subscriptions/{userId}            # サブスク状態（RevenueCatから同期）
++-- users/{userId}                    # User info
++-- groups/{groupId}                  # Group info
+|   +-- members/{userId}              # Group members (subcollection)
++-- missions/{missionId}              # Mission definitions
++-- records/{recordId}                # Daily records
++-- subscriptions/{userId}            # Subscription status (synced from RevenueCat)
 ```
 
 ### 2.2 Collections
@@ -112,49 +129,49 @@ firestore/
 #### users
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| displayName | string | required, max 20 chars | ニックネーム |
-| groupId | string | nullable | 所属グループID |
-| fcmToken | string | nullable | FCMトークン |
-| createdAt | timestamp | required | 作成日時 |
-| updatedAt | timestamp | required | 更新日時 |
+| displayName | string | required, max 20 chars | Nickname |
+| groupId | string | nullable | Group ID |
+| fcmToken | string | nullable | FCM Token |
+| createdAt | timestamp | required | Created at |
+| updatedAt | timestamp | required | Updated at |
 
 #### groups
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| name | string | required, max 30 chars | グループ名 |
-| inviteCode | string | required, unique, 6 chars | 招待コード |
-| ownerId | string | required | オーナーのuserId |
-| memberCount | number | default 1, max 5 | メンバー数 |
-| createdAt | timestamp | required | 作成日時 |
+| name | string | required, max 30 chars | Group name |
+| inviteCode | string | required, unique, 6 chars | Invite code |
+| ownerId | string | required | Owner's userId |
+| memberCount | number | default 1, max 5 | Member count |
+| createdAt | timestamp | required | Created at |
 
 #### groups/{groupId}/members (subcollection)
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| displayName | string | required | 参加時のニックネーム |
-| joinedAt | timestamp | required | 参加日時 |
+| displayName | string | required | Nickname at join time |
+| joinedAt | timestamp | required | Joined at |
 
 #### missions
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| userId | string | required | 作成者のuserId |
-| type | string | required, enum: 'workout' \| 'study' | ミッション種別 |
-| name | string | required, max 50 chars | ミッション名 |
-| targetValue | number | required, > 0 | 目標値 |
-| unit | string | required, max 10 chars | 単位（回、分、ページ等） |
-| isActive | boolean | default true | アクティブ状態 |
-| sortOrder | number | default 0 | 表示順 |
-| createdAt | timestamp | required | 作成日時 |
-| updatedAt | timestamp | required | 更新日時 |
+| userId | string | required | Creator's userId |
+| type | string | required, enum: 'workout' \| 'study' | Mission type |
+| name | string | required, max 50 chars | Mission name |
+| targetValue | number | required, > 0 | Target value |
+| unit | string | required, max 10 chars | Unit (reps, mins, pages, etc.) |
+| isActive | boolean | default true | Active status |
+| sortOrder | number | default 0 | Display order |
+| createdAt | timestamp | required | Created at |
+| updatedAt | timestamp | required | Updated at |
 
 #### records
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| userId | string | required | ユーザーID |
-| missionId | string | required | ミッションID |
-| value | number | required, >= 0 | 達成値 |
-| date | string | required, YYYY-MM-DD | 記録日（ローカル日付） |
-| createdAt | timestamp | required | 作成日時 |
-| updatedAt | timestamp | required | 更新日時 |
+| userId | string | required | User ID |
+| missionId | string | required | Mission ID |
+| value | number | required, >= 0 | Achieved value |
+| date | string | required, YYYY-MM-DD | Record date (local date) |
+| createdAt | timestamp | required | Created at |
+| updatedAt | timestamp | required | Updated at |
 
 **Composite Index:**
 - `userId` + `missionId` + `date` (unique)
@@ -163,27 +180,27 @@ firestore/
 #### subscriptions
 | Field | Type | Constraints | Description |
 |-------|------|-------------|-------------|
-| status | string | enum: 'active' \| 'cancelled' \| 'expired' \| 'none' | 課金状態 |
+| status | string | enum: 'active' \| 'cancelled' \| 'expired' \| 'none' | Subscription status |
 | productId | string | nullable | RevenueCat product ID |
-| isGoalAchieved | boolean | default false | 月間目標達成フラグ |
-| currentPeriodEnd | timestamp | nullable | 現在の課金期間終了日 |
-| updatedAt | timestamp | required | 更新日時 |
+| isGoalAchieved | boolean | default false | Monthly goal achieved flag |
+| currentPeriodEnd | timestamp | nullable | Current period end date |
+| updatedAt | timestamp | required | Updated at |
 
 ### 2.3 Indexes
 
 | Collection | Fields | Order | Purpose |
 |------------|--------|-------|---------|
-| missions | userId, isActive, sortOrder | ASC | ユーザーのアクティブミッション一覧 |
-| records | userId, date | DESC | ユーザーの記録履歴 |
-| records | userId, missionId, date | - | 特定ミッションの記録（unique） |
-| groups | inviteCode | - | 招待コードでグループ検索 |
+| missions | userId, isActive, sortOrder | ASC | User's active missions list |
+| records | userId, date | DESC | User's record history |
+| records | userId, missionId, date | - | Specific mission records (unique) |
+| groups | inviteCode | - | Search group by invite code |
 
 ### 2.4 Data Denormalization
 
-パフォーマンスのため、以下のデータを複製:
+For performance, following data is duplicated:
 
-1. **groups.memberCount**: メンバー追加/削除時に更新（subcollection countを避ける）
-2. **groups/members.displayName**: 毎回usersを参照しない（グループ画面表示用）
+1. **groups.memberCount**: Updated on member add/remove (avoid subcollection count)
+2. **groups/members.displayName**: Avoid users lookup (for group screen display)
 
 ---
 
@@ -219,7 +236,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
-      allow delete: if false; // ソフトデリートのみ
+      allow delete: if false; // Soft delete only
     }
 
     // Groups
@@ -252,19 +269,19 @@ service cloud.firestore {
 
     // Records
     match /records/{recordId} {
-      // 自分の記録は読み書き可能
+      // Own records are readable and writable
       allow read, write: if isAuthenticated() && isOwner(resource.data.userId);
 
-      // グループメンバーの記録は読み取りのみ可能
+      // Group members' records are read-only
       allow read: if isAuthenticated() &&
                     hasActiveSubscription() &&
                     isGroupMember(get(/databases/$(database)/documents/users/$(resource.data.userId)).data.groupId);
     }
 
-    // Subscriptions (read only - RevenueCat webhook で更新)
+    // Subscriptions (read only - updated via RevenueCat webhook)
     match /subscriptions/{userId} {
       allow read: if isOwner(userId);
-      allow write: if false; // Cloud Functions経由のみ
+      allow write: if false; // Cloud Functions only
     }
   }
 }
@@ -272,211 +289,591 @@ service cloud.firestore {
 
 ---
 
-## 4. Frontend Architecture
+## 4. Frontend Architecture (Next.js)
 
 ### 4.1 Directory Structure
 
 ```
-lib/
-├── main.dart                          # Entry point
-├── app/
-│   ├── app.dart                       # MaterialApp configuration
-│   ├── router.dart                    # go_router configuration
-│   └── providers.dart                 # Global providers
-│
-├── features/
-│   ├── auth/
-│   │   ├── data/
-│   │   │   └── auth_repository.dart
-│   │   ├── domain/
-│   │   │   └── user.dart              # freezed model
-│   │   ├── presentation/
-│   │   │   ├── login_screen.dart
-│   │   │   ├── nickname_screen.dart
-│   │   │   └── auth_controller.dart
-│   │   └── providers.dart
-│   │
-│   ├── mission/
-│   │   ├── data/
-│   │   │   ├── mission_repository.dart
-│   │   │   └── record_repository.dart
-│   │   ├── domain/
-│   │   │   ├── mission.dart
-│   │   │   └── record.dart
-│   │   ├── presentation/
-│   │   │   ├── home_screen.dart
-│   │   │   ├── mission_create_screen.dart
-│   │   │   ├── mission_detail_screen.dart
-│   │   │   ├── home_controller.dart
-│   │   │   └── widgets/
-│   │   │       ├── mission_card.dart
-│   │   │       └── record_input.dart
-│   │   └── providers.dart
-│   │
-│   ├── group/
-│   │   ├── data/
-│   │   │   └── group_repository.dart
-│   │   ├── domain/
-│   │   │   ├── group.dart
-│   │   │   └── member.dart
-│   │   ├── presentation/
-│   │   │   ├── group_screen.dart
-│   │   │   ├── group_create_screen.dart
-│   │   │   ├── group_join_screen.dart
-│   │   │   ├── group_controller.dart
-│   │   │   └── widgets/
-│   │   │       └── member_card.dart
-│   │   └── providers.dart
-│   │
-│   ├── subscription/
-│   │   ├── data/
-│   │   │   └── subscription_repository.dart
-│   │   ├── domain/
-│   │   │   └── subscription.dart
-│   │   ├── presentation/
-│   │   │   ├── paywall_screen.dart
-│   │   │   └── subscription_controller.dart
-│   │   └── providers.dart
-│   │
-│   └── settings/
-│       └── presentation/
-│           └── settings_screen.dart
-│
-├── shared/
-│   ├── providers/
-│   │   ├── firebase_providers.dart    # Firebase instances
-│   │   └── user_provider.dart         # Current user state
-│   ├── services/
-│   │   └── analytics_service.dart
-│   └── widgets/
-│       ├── loading_overlay.dart
-│       ├── error_dialog.dart
-│       └── primary_button.dart
-│
-└── core/
-    ├── constants/
-    │   ├── app_constants.dart
-    │   └── firestore_paths.dart
-    ├── theme/
-    │   ├── app_theme.dart
-    │   └── app_colors.dart
-    ├── utils/
-    │   ├── date_utils.dart
-    │   └── validators.dart
-    └── extensions/
-        └── context_extensions.dart
+web/
++-- app/
+|   +-- (auth)/
+|   |   +-- login/
+|   |   |   +-- page.tsx              # Login screen
+|   |   +-- nickname/
+|   |       +-- page.tsx              # Nickname setup screen
+|   |
+|   +-- (main)/
+|   |   +-- layout.tsx                # Main shell with bottom nav
+|   |   +-- home/
+|   |   |   +-- page.tsx              # Home screen (missions)
+|   |   +-- group/
+|   |   |   +-- page.tsx              # Group screen
+|   |   +-- settings/
+|   |       +-- page.tsx              # Settings screen
+|   |
+|   +-- mission/
+|   |   +-- create/
+|   |   |   +-- page.tsx              # Mission create screen
+|   |   +-- [id]/
+|   |       +-- page.tsx              # Mission detail screen
+|   |
+|   +-- group/
+|   |   +-- create/
+|   |   |   +-- page.tsx              # Group create screen
+|   |   +-- join/
+|   |       +-- page.tsx              # Group join screen
+|   |
+|   +-- paywall/
+|   |   +-- page.tsx                  # Paywall screen
+|   |
+|   +-- layout.tsx                    # Root layout
+|   +-- page.tsx                      # Splash / redirect
+|   +-- globals.css                   # Global styles
+|   +-- providers.tsx                 # Context providers
+|
++-- components/
+|   +-- ui/                           # shadcn/ui components
+|   |   +-- button.tsx
+|   |   +-- card.tsx
+|   |   +-- input.tsx
+|   |   +-- dialog.tsx
+|   |   +-- ...
+|   |
+|   +-- features/
+|   |   +-- mission/
+|   |   |   +-- mission-card.tsx
+|   |   |   +-- record-input.tsx
+|   |   +-- group/
+|   |   |   +-- member-card.tsx
+|   |   +-- auth/
+|   |       +-- apple-sign-in-button.tsx
+|   |
+|   +-- shared/
+|       +-- loading-spinner.tsx
+|       +-- error-message.tsx
+|       +-- bottom-nav.tsx
+|
++-- lib/
+|   +-- firebase/
+|   |   +-- config.ts                 # Firebase initialization
+|   |   +-- auth.ts                   # Auth functions
+|   |   +-- firestore.ts              # Firestore functions
+|   |
+|   +-- hooks/
+|   |   +-- use-auth.ts               # Auth hook
+|   |   +-- use-missions.ts           # Missions hook
+|   |   +-- use-records.ts            # Records hook
+|   |   +-- use-group.ts              # Group hook
+|   |   +-- use-subscription.ts       # Subscription hook
+|   |   +-- use-native-bridge.ts      # Native bridge hook
+|   |
+|   +-- stores/
+|   |   +-- auth-store.ts             # Zustand auth store
+|   |   +-- mission-store.ts          # Zustand mission store
+|   |
+|   +-- types/
+|   |   +-- user.ts
+|   |   +-- mission.ts
+|   |   +-- record.ts
+|   |   +-- group.ts
+|   |   +-- subscription.ts
+|   |
+|   +-- utils/
+|       +-- date.ts
+|       +-- validators.ts
+|       +-- constants.ts
+|
++-- public/
+|   +-- icons/
+|   +-- images/
+|
++-- next.config.js
++-- tailwind.config.js
++-- tsconfig.json
++-- package.json
 ```
 
-### 4.2 State Management Pattern
+### 4.2 State Management (Zustand)
 
-```dart
-// Provider定義（riverpod_generator使用）
-@riverpod
-class HomeController extends _$HomeController {
-  @override
-  Future<HomeState> build() async {
-    final user = await ref.watch(currentUserProvider.future);
-    final missions = await ref.watch(activeMissionsProvider.future);
-    final todayRecords = await ref.watch(todayRecordsProvider.future);
+```typescript
+// lib/stores/auth-store.ts
+import { create } from 'zustand';
+import { User } from '@/lib/types/user';
 
-    return HomeState(
-      user: user,
-      missions: missions,
-      todayRecords: todayRecords,
-    );
+interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  setUser: (user: User | null) => void;
+  setLoading: (loading: boolean) => void;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isLoading: true,
+  setUser: (user) => set({ user }),
+  setLoading: (isLoading) => set({ isLoading }),
+}));
+```
+
+```typescript
+// lib/stores/mission-store.ts
+import { create } from 'zustand';
+import { Mission, Record } from '@/lib/types';
+
+interface MissionState {
+  missions: Mission[];
+  todayRecords: Map<string, Record>;
+  setMissions: (missions: Mission[]) => void;
+  updateRecord: (missionId: string, record: Record) => void;
+}
+
+export const useMissionStore = create<MissionState>((set) => ({
+  missions: [],
+  todayRecords: new Map(),
+  setMissions: (missions) => set({ missions }),
+  updateRecord: (missionId, record) =>
+    set((state) => {
+      const newRecords = new Map(state.todayRecords);
+      newRecords.set(missionId, record);
+      return { todayRecords: newRecords };
+    }),
+}));
+```
+
+### 4.3 Firebase Integration
+
+```typescript
+// lib/firebase/config.ts
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+// Initialize Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+
+// Analytics (client-side only)
+export const initAnalytics = async () => {
+  if (typeof window !== 'undefined' && await isSupported()) {
+    return getAnalytics(app);
   }
+  return null;
+};
+```
 
-  Future<void> updateRecord(String missionId, int value) async {
-    final repository = ref.read(recordRepositoryProvider);
-    await repository.upsertTodayRecord(missionId, value);
-    ref.invalidateSelf();
-  }
+### 4.4 Custom Hooks
+
+```typescript
+// lib/hooks/use-auth.ts
+import { useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+import { useAuthStore } from '@/lib/stores/auth-store';
+import { getUserProfile } from '@/lib/firebase/firestore';
+
+export function useAuth() {
+  const { user, isLoading, setUser, setLoading } = useAuthStore();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const profile = await getUserProfile(firebaseUser.uid);
+        setUser(profile);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [setUser, setLoading]);
+
+  return { user, isLoading };
 }
 ```
 
-### 4.3 Routing
-
-```dart
-final router = GoRouter(
-  initialLocation: '/splash',
-  redirect: (context, state) {
-    final isLoggedIn = /* check auth state */;
-    final isOnboarded = /* check nickname set */;
-
-    if (!isLoggedIn) return '/login';
-    if (!isOnboarded) return '/nickname';
-    return null;
-  },
-  routes: [
-    GoRoute(path: '/splash', builder: (_, __) => SplashScreen()),
-    GoRoute(path: '/login', builder: (_, __) => LoginScreen()),
-    GoRoute(path: '/nickname', builder: (_, __) => NicknameScreen()),
-
-    ShellRoute(
-      builder: (_, __, child) => MainShell(child: child),
-      routes: [
-        GoRoute(path: '/home', builder: (_, __) => HomeScreen()),
-        GoRoute(path: '/group', builder: (_, __) => GroupScreen()),
-        GoRoute(path: '/settings', builder: (_, __) => SettingsScreen()),
-      ],
-    ),
-
-    GoRoute(path: '/mission/create', builder: (_, __) => MissionCreateScreen()),
-    GoRoute(path: '/mission/:id', builder: (_, state) =>
-      MissionDetailScreen(id: state.pathParameters['id']!)),
-    GoRoute(path: '/group/create', builder: (_, __) => GroupCreateScreen()),
-    GoRoute(path: '/group/join', builder: (_, __) => GroupJoinScreen()),
-    GoRoute(path: '/paywall', builder: (_, __) => PaywallScreen()),
-  ],
-);
-```
-
-### 4.4 Screen Navigation Flow
+### 4.5 Screen Navigation Flow
 
 ```
-┌─────────────┐
-│   Splash    │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐    Not logged in    ┌─────────────┐
-│  Auth Check │ ───────────────────▶│    Login    │
-└──────┬──────┘                     └──────┬──────┘
-       │ Logged in                         │
-       ▼                                   ▼
-┌─────────────┐    No nickname      ┌─────────────┐
-│ Nick Check  │ ───────────────────▶│  Nickname   │
-└──────┬──────┘                     └──────┬──────┘
-       │ Has nickname                      │
-       ▼                                   ▼
-┌─────────────────────────────────────────────────┐
-│                  Main Shell                      │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐         │
-│  │  Home   │  │  Group  │  │ Settings│         │
-│  └────┬────┘  └────┬────┘  └────┬────┘         │
-└───────┼────────────┼────────────┼───────────────┘
-        │            │            │
-        ▼            ▼            ▼
-   Mission       Group         Paywall
-   Create/       Create/       (Modal)
-   Detail        Join
++-------------+
+|   Splash    |
++------+------+
+       |
+       v
++-------------+    Not logged in    +-------------+
+|  Auth Check | -----------------> |    Login    |
++------+------+                    +------+------+
+       | Logged in                        |
+       v                                  v
++-------------+    No nickname     +-------------+
+| Nick Check  | -----------------> |  Nickname   |
++------+------+                    +------+------+
+       | Has nickname                     |
+       v                                  v
++-----------------------------------------------+
+|                  Main Shell                    |
+|  +---------+  +---------+  +---------+        |
+|  |  Home   |  |  Group  |  | Settings|        |
+|  +----+----+  +----+----+  +----+----+        |
++--------+------------+------------+-------------+
+         |            |            |
+         v            v            v
+    Mission       Group         Paywall
+    Create/       Create/       (Modal)
+    Detail        Join
 ```
 
 ---
 
-## 5. External Services Integration
+## 5. Native Bridge Design
 
-### 5.1 Firebase
+### 5.1 Flutter Shell Structure
+
+```
+flutter_shell/
++-- lib/
+|   +-- main.dart                     # Entry point
+|   +-- app.dart                      # MaterialApp configuration
+|   +-- webview_screen.dart           # WebView screen
+|   +-- native_bridge.dart            # JavaScript handler definitions
+|   +-- services/
+|   |   +-- revenuecat_service.dart   # RevenueCat integration
+|   |   +-- fcm_service.dart          # FCM integration
+|   +-- models/
+|       +-- purchase_result.dart
+|       +-- subscription_info.dart
+|
++-- ios/
+|   +-- ...
++-- pubspec.yaml
+```
+
+### 5.2 WebView Configuration
+
+```dart
+// lib/webview_screen.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'native_bridge.dart';
+
+class WebViewScreen extends StatefulWidget {
+  const WebViewScreen({super.key});
+
+  @override
+  State<WebViewScreen> createState() => _WebViewScreenState();
+}
+
+class _WebViewScreenState extends State<WebViewScreen> {
+  InAppWebViewController? _webViewController;
+  final NativeBridge _nativeBridge = NativeBridge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: InAppWebView(
+          initialUrlRequest: URLRequest(
+            url: WebUri('https://barm.app'), // Production URL
+          ),
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            allowsInlineMediaPlayback: true,
+            mediaPlaybackRequiresUserGesture: false,
+          ),
+          onWebViewCreated: (controller) {
+            _webViewController = controller;
+            _nativeBridge.registerHandlers(controller);
+          },
+          onLoadStop: (controller, url) async {
+            // Inject initial data if needed
+            await _nativeBridge.injectFcmToken(controller);
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+### 5.3 Native Bridge Implementation
+
+```dart
+// lib/native_bridge.dart
+import 'dart:convert';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'services/revenuecat_service.dart';
+import 'services/fcm_service.dart';
+
+class NativeBridge {
+  final RevenueCatService _revenueCat = RevenueCatService();
+  final FcmService _fcm = FcmService();
+
+  void registerHandlers(InAppWebViewController controller) {
+    // Purchase handler
+    controller.addJavaScriptHandler(
+      handlerName: 'purchase',
+      callback: (args) async {
+        final productId = args[0] as String;
+        try {
+          final result = await _revenueCat.purchase(productId);
+          return jsonEncode({
+            'success': true,
+            'data': result.toJson(),
+          });
+        } catch (e) {
+          return jsonEncode({
+            'success': false,
+            'error': e.toString(),
+          });
+        }
+      },
+    );
+
+    // Restore purchases handler
+    controller.addJavaScriptHandler(
+      handlerName: 'restorePurchases',
+      callback: (args) async {
+        try {
+          final result = await _revenueCat.restorePurchases();
+          return jsonEncode({
+            'success': true,
+            'data': result.toJson(),
+          });
+        } catch (e) {
+          return jsonEncode({
+            'success': false,
+            'error': e.toString(),
+          });
+        }
+      },
+    );
+
+    // Get subscription info handler
+    controller.addJavaScriptHandler(
+      handlerName: 'getSubscriptionInfo',
+      callback: (args) async {
+        try {
+          final info = await _revenueCat.getSubscriptionInfo();
+          return jsonEncode({
+            'success': true,
+            'data': info?.toJson(),
+          });
+        } catch (e) {
+          return jsonEncode({
+            'success': false,
+            'error': e.toString(),
+          });
+        }
+      },
+    );
+
+    // Get FCM token handler
+    controller.addJavaScriptHandler(
+      handlerName: 'getFcmToken',
+      callback: (args) async {
+        try {
+          final token = await _fcm.getToken();
+          return jsonEncode({
+            'success': true,
+            'data': token,
+          });
+        } catch (e) {
+          return jsonEncode({
+            'success': false,
+            'error': e.toString(),
+          });
+        }
+      },
+    );
+  }
+
+  Future<void> injectFcmToken(InAppWebViewController controller) async {
+    final token = await _fcm.getToken();
+    if (token != null) {
+      await controller.evaluateJavascript(
+        source: "window.fcmToken = '$token';",
+      );
+    }
+  }
+}
+```
+
+### 5.4 Web-side Native Bridge Hook
+
+```typescript
+// lib/hooks/use-native-bridge.ts
+
+interface NativeBridgeResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export function useNativeBridge() {
+  const isNative = typeof window !== 'undefined' &&
+    window.flutter_inappwebview !== undefined;
+
+  const callNative = async <T>(
+    method: string,
+    args: unknown[] = []
+  ): Promise<NativeBridgeResult<T>> => {
+    if (!isNative) {
+      return { success: false, error: 'Not running in native app' };
+    }
+
+    try {
+      const result = await window.flutter_inappwebview.callHandler(method, ...args);
+      return JSON.parse(result);
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  };
+
+  const purchase = async (productId: string) => {
+    return callNative<PurchaseResult>('purchase', [productId]);
+  };
+
+  const restorePurchases = async () => {
+    return callNative<SubscriptionInfo>('restorePurchases');
+  };
+
+  const getSubscriptionInfo = async () => {
+    return callNative<SubscriptionInfo>('getSubscriptionInfo');
+  };
+
+  const getFcmToken = async () => {
+    // First check if token is already injected
+    if (typeof window !== 'undefined' && window.fcmToken) {
+      return { success: true, data: window.fcmToken };
+    }
+    return callNative<string>('getFcmToken');
+  };
+
+  return {
+    isNative,
+    purchase,
+    restorePurchases,
+    getSubscriptionInfo,
+    getFcmToken,
+  };
+}
+
+// Type declarations
+declare global {
+  interface Window {
+    flutter_inappwebview?: {
+      callHandler: (method: string, ...args: unknown[]) => Promise<string>;
+    };
+    fcmToken?: string;
+  }
+}
+
+interface PurchaseResult {
+  productId: string;
+  transactionId: string;
+  purchaseDate: string;
+}
+
+interface SubscriptionInfo {
+  isActive: boolean;
+  productId: string | null;
+  expirationDate: string | null;
+}
+```
+
+### 5.5 RevenueCat Service
+
+```dart
+// lib/services/revenuecat_service.dart
+import 'package:purchases_flutter/purchases_flutter.dart';
+import '../models/purchase_result.dart';
+import '../models/subscription_info.dart';
+
+class RevenueCatService {
+  static const String _apiKey = 'YOUR_REVENUECAT_API_KEY';
+
+  Future<void> init() async {
+    await Purchases.setLogLevel(LogLevel.debug);
+    await Purchases.configure(
+      PurchasesConfiguration(_apiKey)
+        ..appUserID = null, // Will be set after auth
+    );
+  }
+
+  Future<void> setUserId(String userId) async {
+    await Purchases.logIn(userId);
+  }
+
+  Future<PurchaseResult> purchase(String productId) async {
+    final offerings = await Purchases.getOfferings();
+    final package = offerings.current?.availablePackages
+        .firstWhere((p) => p.storeProduct.identifier == productId);
+
+    if (package == null) {
+      throw Exception('Product not found');
+    }
+
+    final result = await Purchases.purchasePackage(package);
+    final transaction = result.nonSubscriptionTransactions.isNotEmpty
+        ? result.nonSubscriptionTransactions.last
+        : null;
+
+    return PurchaseResult(
+      productId: productId,
+      transactionId: transaction?.transactionIdentifier ?? '',
+      purchaseDate: DateTime.now().toIso8601String(),
+    );
+  }
+
+  Future<SubscriptionInfo> restorePurchases() async {
+    final customerInfo = await Purchases.restorePurchases();
+    return _mapCustomerInfo(customerInfo);
+  }
+
+  Future<SubscriptionInfo?> getSubscriptionInfo() async {
+    final customerInfo = await Purchases.getCustomerInfo();
+    return _mapCustomerInfo(customerInfo);
+  }
+
+  SubscriptionInfo _mapCustomerInfo(CustomerInfo info) {
+    final isActive = info.entitlements.active.containsKey('premium');
+    final activeEntitlement = info.entitlements.active['premium'];
+
+    return SubscriptionInfo(
+      isActive: isActive,
+      productId: activeEntitlement?.productIdentifier,
+      expirationDate: activeEntitlement?.expirationDate,
+    );
+  }
+}
+```
+
+---
+
+## 6. External Services Integration
+
+### 6.1 Firebase
 
 | Service | Purpose | Configuration |
 |---------|---------|---------------|
-| **Auth** | ユーザー認証 | Apple Sign In のみ有効化 |
-| **Firestore** | データ永続化 | asia-northeast1 (Tokyo) |
-| **FCM** | プッシュ通知 | APNs Key 設定必要 |
-| **Analytics** | イベント計測 | 自動収集 + カスタムイベント |
-| **Crashlytics** | クラッシュ監視 | 自動設定 |
+| **Auth** | User authentication | Apple Sign In only |
+| **Firestore** | Data persistence | asia-northeast1 (Tokyo) |
+| **FCM** | Push notifications | APNs Key required |
+| **Analytics** | Event tracking | Auto collection + custom events |
 
-### 5.2 RevenueCat
+### 6.2 RevenueCat
 
 | Item | Value |
 |------|-------|
@@ -486,132 +883,176 @@ final router = GoRouter(
 | Webhook URL | Cloud Functions endpoint |
 
 **Webhook Events:**
-- `INITIAL_PURCHASE` → subscriptions/{userId} 作成
-- `RENEWAL` → status 更新
-- `CANCELLATION` → status = 'cancelled'
-- `EXPIRATION` → status = 'expired'
+- `INITIAL_PURCHASE` -> Create subscriptions/{userId}
+- `RENEWAL` -> Update status
+- `CANCELLATION` -> status = 'cancelled'
+- `EXPIRATION` -> status = 'expired'
 
 ---
 
-## 6. Technical Constraints
+## 7. Technical Constraints
 
-### 6.1 Performance Requirements
+### 7.1 Performance Requirements
 
 | Metric | Target | How to Achieve |
 |--------|--------|----------------|
-| Cold Start | < 3s | Minimal main.dart, lazy loading |
-| Screen Transition | < 500ms | Pre-fetch data, skeleton UI |
-| List Scroll | 60fps | ListView.builder, const widgets |
-| Firestore Latency | < 1s | Optimistic UI, local cache |
+| Web Load | < 3s | Next.js static generation, CDN |
+| FCP | < 1.5s | Minimal JS bundle, lazy loading |
+| WebView Start | < 2s | Pre-warm WebView, splash screen |
+| API Latency | < 1s | Firestore local cache |
 
-### 6.2 Offline Support
+### 7.2 Offline Support
 
 ```
-┌─────────────────────────────────────────────┐
-│              Offline Strategy                │
-├─────────────────────────────────────────────┤
-│ Records: Firestore offline persistence      │
-│ - 記録入力はオフラインでも保存              │
-│ - 再接続時に自動同期                        │
-│                                             │
-│ Missions: Read from cache                   │
-│ - 一度取得したらキャッシュ                  │
-│                                             │
-│ Group: Online only                          │
-│ - 仲間の記録はリアルタイム性が重要          │
-│ - オフライン時はキャッシュ表示 + 警告       │
-└─────────────────────────────────────────────┘
++---------------------------------------------+
+|              Offline Strategy                |
++---------------------------------------------+
+| Records: Firestore offline persistence      |
+| - Record input works offline                |
+| - Auto sync on reconnect                    |
+|                                             |
+| Missions: Read from cache                   |
+| - Cache after first fetch                   |
+|                                             |
+| Group: Online only                          |
+| - Members' records need real-time           |
+| - Show cached data + warning when offline   |
++---------------------------------------------+
 ```
 
-### 6.3 Security Considerations
+### 7.3 Security Considerations
 
-1. **API Keys**: Firebaseの設定はアプリに埋め込み（App Checkで保護）
-2. **RevenueCat**: Webhook secret は Cloud Functions の環境変数
-3. **User Data**: Firestore Security Rules で厳格に制御
-4. **FCM Token**: ユーザードキュメントに保存、他ユーザーからはアクセス不可
+1. **Firebase Config**: Embedded in web app (protected by Firebase App Check)
+2. **RevenueCat**: Webhook secret in Cloud Functions environment variables
+3. **User Data**: Strict control via Firestore Security Rules
+4. **FCM Token**: Stored in user document, inaccessible to other users
+5. **WebView**: Only load trusted URLs (barm.app domain)
 
 ---
 
-## 7. Analytics Events
+## 8. Analytics Events
 
 | Event | Parameters | Trigger |
 |-------|------------|---------|
-| `sign_up` | method | 新規登録完了 |
-| `login` | method | ログイン |
-| `mission_created` | type, name | ミッション作成 |
-| `record_logged` | mission_type, value, is_goal_achieved | 記録入力 |
-| `streak_achieved` | days | ストリーク達成（7, 14, 30日） |
-| `group_created` | - | グループ作成 |
-| `group_joined` | - | グループ参加 |
-| `subscription_started` | product_id | 課金開始 |
-| `subscription_cancelled` | - | 課金キャンセル |
+| `sign_up` | method | Sign up complete |
+| `login` | method | Login |
+| `mission_created` | type, name | Mission created |
+| `record_logged` | mission_type, value, is_goal_achieved | Record input |
+| `streak_achieved` | days | Streak achieved (7, 14, 30 days) |
+| `group_created` | - | Group created |
+| `group_joined` | - | Group joined |
+| `subscription_started` | product_id | Subscription started |
+| `subscription_cancelled` | - | Subscription cancelled |
 
 ---
 
-## 8. Development Guidelines
+## 9. Development Guidelines
 
-### 8.1 Naming Conventions
+### 9.1 Web Development (Next.js)
+
+#### Naming Conventions
 
 | Type | Convention | Example |
 |------|------------|---------|
-| Files | snake_case | `mission_repository.dart` |
-| Classes | PascalCase | `MissionRepository` |
-| Variables | camelCase | `activeMissions` |
-| Constants | SCREAMING_SNAKE | `MAX_MISSIONS` |
-| Providers | camelCase + Provider | `missionRepositoryProvider` |
+| Files | kebab-case | `mission-card.tsx` |
+| Components | PascalCase | `MissionCard` |
+| Hooks | camelCase with use prefix | `useMissions` |
+| Stores | camelCase with Store suffix | `useAuthStore` |
+| Types | PascalCase | `Mission`, `Record` |
 
-### 8.2 Error Handling
+#### Component Structure
 
-```dart
-// Repository層でExceptionをthrow
-class MissionRepository {
-  Future<Mission> create(MissionInput input) async {
-    try {
-      final doc = await _firestore.collection('missions').add(input.toJson());
-      return Mission.fromDoc(await doc.get());
-    } on FirebaseException catch (e) {
-      throw MissionException.fromFirebase(e);
-    }
-  }
+```typescript
+// components/features/mission/mission-card.tsx
+'use client';
+
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Mission, Record } from '@/lib/types';
+import { RecordInput } from './record-input';
+
+interface MissionCardProps {
+  mission: Mission;
+  record?: Record;
+  onRecordUpdate: (value: number) => void;
 }
 
-// Controller層でcatchしてUIに反映
-@riverpod
-class MissionController extends _$MissionController {
-  Future<void> create(MissionInput input) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      final mission = await ref.read(missionRepositoryProvider).create(input);
-      return mission;
-    });
-  }
-}
-
-// Widget層でエラー表示
-Widget build(BuildContext context, WidgetRef ref) {
-  final state = ref.watch(missionControllerProvider);
-  return state.when(
-    data: (mission) => MissionCard(mission),
-    loading: () => const CircularProgressIndicator(),
-    error: (e, _) => ErrorView(message: e.toString()),
+export function MissionCard({ mission, record, onRecordUpdate }: MissionCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <h3>{mission.name}</h3>
+        <span>{mission.targetValue} {mission.unit}</span>
+      </CardHeader>
+      <CardContent>
+        <RecordInput
+          currentValue={record?.value ?? 0}
+          targetValue={mission.targetValue}
+          onChange={onRecordUpdate}
+        />
+      </CardContent>
+    </Card>
   );
 }
 ```
 
-### 8.3 Testing Strategy
+### 9.2 Flutter Shell Development
+
+#### Naming Conventions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Files | snake_case | `native_bridge.dart` |
+| Classes | PascalCase | `NativeBridge` |
+| Variables | camelCase | `webViewController` |
+| Constants | camelCase or SCREAMING_SNAKE | `apiKey`, `MAX_RETRIES` |
+
+### 9.3 Error Handling
+
+```typescript
+// Web-side error handling
+export async function handleApiError<T>(
+  promise: Promise<T>,
+  fallback?: T
+): Promise<T | undefined> {
+  try {
+    return await promise;
+  } catch (error) {
+    console.error('API Error:', error);
+
+    if (error instanceof FirebaseError) {
+      // Handle specific Firebase errors
+      switch (error.code) {
+        case 'permission-denied':
+          toast.error('Permission denied');
+          break;
+        case 'unavailable':
+          toast.error('Service unavailable. Please try again.');
+          break;
+        default:
+          toast.error('An error occurred');
+      }
+    }
+
+    return fallback;
+  }
+}
+```
+
+### 9.4 Testing Strategy
 
 | Layer | Test Type | Coverage Target |
 |-------|-----------|-----------------|
-| Domain (Models) | Unit Test | 100% |
-| Repository | Unit Test (with mock) | 80% |
-| Controller | Unit Test (with mock) | 80% |
-| Widget | Widget Test | Critical paths |
-| E2E | Integration Test | Happy path |
+| Types/Utils | Unit Test | 100% |
+| Hooks | Unit Test (with mocks) | 80% |
+| Components | Component Test (Testing Library) | Critical paths |
+| Native Bridge | Integration Test | All handlers |
+| E2E | Cypress/Playwright | Happy path |
 
 ---
 
-## 変更履歴
+## Change History
 
-| バージョン | 日付 | 変更内容 |
-|-----------|------|----------|
-| 1.0 | 2026-01-02 | 初版作成 |
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-01-02 | Initial creation (Flutter native) |
+| 2.0 | 2026-01-03 | WebView + Flutter Shell architecture |

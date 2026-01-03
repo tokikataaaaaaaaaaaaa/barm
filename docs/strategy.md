@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-BARMは「男性特化の筋トレ×勉強習慣化アプリ」として、競合不在の市場ポジションを確立する。Flutter + Firebase + RevenueCatのモダンスタックで、4ヶ月以内にMVPをリリース。Twitter運用とASOに集中したローコストマーケティングで初期ユーザーを獲得する。
+BARMは「男性特化の筋トレ×勉強習慣化アプリ」として、競合不在の市場ポジションを確立する。**WebView + Flutter シェル方式**（Next.js Web アプリ + Flutter WebView ラッパー）を採用し、**3ヶ月以内にMVPをリリース**。Web デプロイで即時反映できるため、App Store 審査を最小化し高速リリースサイクルを実現。Twitter運用とASOに集中したローコストマーケティングで初期ユーザーを獲得する。
 
 ---
 
@@ -49,23 +49,75 @@ BARMは「男性特化の筋トレ×勉強習慣化アプリ」として、競�
 
 ## 2. Tech Stack Selection
 
-### 推奨スタック
+### 推奨スタック（WebView + Flutter シェル方式）
 
 ```
-Frontend:  Flutter + Riverpod（状態管理）
-Backend:   Firebase（Firestore + Auth + FCM）
-Database:  Firestore（NoSQL）
-Payment:   RevenueCat + App Store IAP
-Analytics: Firebase Analytics + Crashlytics
+Web App:       Next.js 14 (App Router) + React + TailwindCSS
+Mobile Shell:  Flutter (WebView only) + RevenueCat
+Backend:       Firebase (Web SDK)
+               - Firestore (NoSQL)
+               - Firebase Auth
+               - Cloud Functions (必要に応じて)
+Database:      Firestore（NoSQL）
+Payment:       RevenueCat (Flutter側で処理) + App Store IAP
+Analytics:     Firebase Analytics (Web SDK) + Vercel Analytics
+Hosting:       Vercel (Web App)
+```
+
+### アーキテクチャ概要
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    iOS App                          │
+│  ┌───────────────────────────────────────────────┐  │
+│  │         Flutter Shell (WebView)              │  │
+│  │  ┌─────────────────────────────────────────┐  │  │
+│  │  │                                         │  │  │
+│  │  │         Next.js Web App                 │  │  │
+│  │  │         (Vercel hosted)                 │  │  │
+│  │  │                                         │  │  │
+│  │  └─────────────────────────────────────────┘  │  │
+│  │                                               │  │
+│  │  ┌─────────────┐   ┌─────────────────────┐   │  │
+│  │  │ RevenueCat  │   │ Native Bridge       │   │  │
+│  │  │ (課金処理)  │   │ (JS <-> Flutter)    │   │  │
+│  │  └─────────────┘   └─────────────────────┘   │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+                          │
+                          ▼
+              ┌───────────────────────┐
+              │      Firebase         │
+              │   (Web SDK経由)       │
+              └───────────────────────┘
 ```
 
 ### 選定理由
 
 | 技術 | 選定理由 |
 |------|----------|
-| **Flutter** | iOS先行でも将来Android展開可能。ホットリロードで高速開発。 |
-| **Firebase** | 通知(FCM)・Analytics・Crashlyticsが統合。Flutter連携が成熟。日本語情報豊富。 |
-| **RevenueCat** | サブスク管理を簡素化。月$2,500収益まで無料。 |
+| **Next.js + TailwindCSS** | 高速開発。Web デプロイで即時反映。SEO対応不要なのでCSR中心。 |
+| **Flutter WebView** | iOS/Android 両対応のシェル。App Store 公開に必要。ネイティブ機能（課金）へのブリッジ。 |
+| **Firebase (Web SDK)** | Next.js から直接利用。認証・DB・Analyticsが統合。日本語情報豊富。 |
+| **RevenueCat (Flutter)** | App Store IAP 必須のため Flutter 側で処理。サブスク管理を簡素化。月$2,500収益まで無料。 |
+| **Vercel** | Next.js の最適なホスティング。無料枠で十分。デプロイが高速。 |
+
+### WebView + Flutter シェル方式のメリット
+
+| メリット | 説明 |
+|----------|------|
+| **高速リリースサイクル** | Web アプリの変更は Vercel デプロイで即時反映。App Store 審査不要。 |
+| **App Store 審査最小化** | 初回審査とシェル更新時のみ。UI/機能変更は Web 側で完結。 |
+| **開発効率** | React/Next.js の豊富なエコシステム。Hot Reload で高速開発。 |
+| **将来の展開** | Web 版単体公開も可能。PWA 化も容易。 |
+
+### WebView + Flutter シェル方式の注意点
+
+| 注意点 | 対策 |
+|--------|------|
+| **オフライン対応が限定的** | Service Worker でキャッシュ。重要データは IndexedDB に保存。 |
+| **ネイティブ機能へのアクセス** | JavaScript Bridge で Flutter 側と通信。課金は Flutter 側で処理。 |
+| **パフォーマンス** | シンプルな UI 設計。重い処理は避ける。 |
 
 ### Firestore Data Structure
 
@@ -111,12 +163,22 @@ subscriptions/
 
 ### コスト見積もり
 
-| 項目 | 月額 |
-|------|------|
-| Firebase | $0〜$10（従量課金、初期は無料枠内） |
-| Apple Developer | 約1,000円 |
-| RevenueCat | $0 |
-| **合計** | **約1,000〜2,000円/月** |
+| 項目 | 月額 | 備考 |
+|------|------|------|
+| Vercel | $0 | Hobby プラン（個人利用）で十分 |
+| Firebase | $0〜$10 | 従量課金、初期は無料枠内 |
+| Apple Developer | 約1,000円 | 年額約12,000円 |
+| RevenueCat | $0 | 月$2,500収益まで無料 |
+| **合計** | **約1,000〜2,000円/月** | |
+
+### Vercel無料枠
+
+| リソース | 無料枠 |
+|----------|--------|
+| Bandwidth | 100GB/月 |
+| Serverless Function実行 | 100GB-Hours/月 |
+| ビルド時間 | 6,000分/月 |
+| デプロイ | 無制限 |
 
 ### Firebase無料枠
 
@@ -124,9 +186,7 @@ subscriptions/
 |----------|--------|
 | Firestore | 1GB storage, 50K reads/day, 20K writes/day |
 | Auth | 無制限 |
-| FCM | 無制限 |
 | Analytics | 無制限 |
-| Crashlytics | 無制限 |
 
 ---
 
@@ -184,24 +244,45 @@ subscriptions/
 
 ### 開発フェーズ
 
-| Phase | 期間 | 内容 |
-|-------|------|------|
-| 1 | 2週間 | 認証・ユーザー管理（Firebase Auth） |
-| 2 | 3週間 | ミッション設定・トラッキング |
-| 3 | 3週間 | グループ・仲間機能 |
-| 4 | 2週間 | 決済連携（RevenueCat） |
-| 5 | 1週間 | プッシュ通知（FCM） |
-| 6 | 2週間 | UI/UX磨き込み |
-| 7 | 2週間 | テスト・バグ修正 |
-| 8 | 1-2週間 | App Store審査対応 |
-| **合計** | **約4ヶ月** | |
+| Phase | 期間 | 内容 | 担当 |
+|-------|------|------|------|
+| 1 | 1週間 | プロジェクトセットアップ（Next.js + Flutter Shell） | 共通 |
+| 2 | 1週間 | 認証・ユーザー管理（Firebase Auth Web SDK） | Web |
+| 3 | 2週間 | ミッション設定・トラッキング | Web |
+| 4 | 2週間 | グループ・仲間機能 | Web |
+| 5 | 1週間 | Flutter Shell + WebView 連携 | Flutter |
+| 6 | 1週間 | 決済連携（RevenueCat + JS Bridge） | Flutter + Web |
+| 7 | 1週間 | UI/UX磨き込み | Web |
+| 8 | 1週間 | テスト・バグ修正 | 共通 |
+| 9 | 1週間 | App Store審査対応 | Flutter |
+| **合計** | **約3ヶ月** | | |
+
+### 開発フロー
+
+```
+Web App 開発 (Next.js)
+├─ 認証 → ミッション → グループ → UI磨き込み
+│           ↓
+│     Vercel にデプロイ（即時反映）
+│           ↓
+│     ブラウザでテスト
+│           ↓
+Flutter Shell 開発（並行）
+├─ WebView 設定
+├─ RevenueCat 連携
+├─ JS Bridge 実装
+│           ↓
+App Store 審査（初回のみ重要）
+│           ↓
+リリース後の機能追加は Web 側のみ
+```
 
 ### マーケティングフェーズ
 
 | Phase | 期間 | 内容 | 目標 |
 |-------|------|------|------|
-| 検証 | 0〜3ヶ月 | クローズドβ → ソフトローンチ | 有料100人 |
-| 成長 | 3〜6ヶ月 | Apple Search Ads + インフルエンサー | 有料500人 |
+| 検証 | 0〜2ヶ月 | クローズドβ → ソフトローンチ | 有料100人 |
+| 成長 | 2〜5ヶ月 | Apple Search Ads + インフルエンサー | 有料500人 |
 
 ---
 
@@ -210,9 +291,11 @@ subscriptions/
 | リスク | 影響度 | 対策 |
 |--------|--------|------|
 | グループが集まらない | 高 | マッチング機能検討、Twitter上でチームメイト募集支援 |
-| App Store審査リジェクト | 中 | ガイドライン遵守、課金機能は早めにテスト |
-| 継続率が低い | 高 | 通知最適化、ゲーミフィケーション強化 |
-| Firestore読み取りコスト増 | 中 | キャッシュ活用、クエリ最適化 |
+| App Store審査リジェクト | 低 | WebView アプリは比較的審査通りやすい。課金は RevenueCat で標準実装。 |
+| WebView パフォーマンス問題 | 中 | シンプルな UI 設計。重い処理は避ける。必要なら Native 機能追加。 |
+| オフライン対応の制限 | 中 | Service Worker でキャッシュ。重要データは IndexedDB に保存。 |
+| 継続率が低い | 高 | 通知最適化、ゲーミフィケーション強化（Web Push 検討） |
+| Firestore読み取りコスト増 | 中 | キャッシュ活用、クエリ最適化、React Query でクライアントキャッシュ |
 
 ---
 
@@ -232,14 +315,17 @@ subscriptions/
 1. PRD（Product Requirements Document）作成
 2. 詳細なUI/UX設計
 3. Firestoreセキュリティルール設計
-4. テストケース定義
+4. JS Bridge API 設計（Web <-> Flutter 通信）
+5. テストケース定義
 
 ### 今すぐ実行可能なアクション
 
-1. Flutter開発環境構築
-2. Firebaseプロジェクト作成
-3. Twitter開発者アカウント開設
-4. Apple Developer登録（未登録の場合）
+1. Node.js 開発環境構築
+2. Flutter 開発環境構築（WebView + RevenueCat 用）
+3. Firebase プロジェクト作成
+4. Vercel アカウント作成
+5. Apple Developer 登録（未登録の場合）
+6. Twitter 開発者アカウント開設
 
 ---
 

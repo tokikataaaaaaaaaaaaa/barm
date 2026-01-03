@@ -14,25 +14,80 @@ BARMは、筋トレと勉強の習慣化を支援するiOSアプリです。3〜
 - 仲間の記録閲覧（3-5人の小グループ）
 - 達成ベースのサブスク割引（月300円 → 達成時100円）
 
+## Architecture
+
+**WebView + Flutter Shell 方式**を採用し、高速リリースサイクルを実現します。
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    iOS App                          │
+│  ┌───────────────────────────────────────────────┐  │
+│  │         Flutter Shell (WebView)              │  │
+│  │  ┌─────────────────────────────────────────┐  │  │
+│  │  │         Next.js Web App                 │  │  │
+│  │  │         (Vercel hosted)                 │  │  │
+│  │  └─────────────────────────────────────────┘  │  │
+│  │                                               │  │
+│  │  ┌─────────────┐   ┌─────────────────────┐   │  │
+│  │  │ RevenueCat  │   │ Native Bridge       │   │  │
+│  │  │ (課金処理)  │   │ (JS <-> Flutter)    │   │  │
+│  │  └─────────────┘   └─────────────────────┘   │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+                          │
+                          ▼
+              ┌───────────────────────┐
+              │      Firebase         │
+              │   (Web SDK経由)       │
+              └───────────────────────┘
+```
+
 ## Tech Stack
 
-- **Frontend:** Flutter + Riverpod
-- **Backend:** Firebase (Firestore + Auth + FCM)
+### Web App
+- **Framework:** Next.js 14 (App Router) + React
+- **Styling:** TailwindCSS + shadcn/ui
+- **State:** Zustand + React Query
+- **Backend:** Firebase (Web SDK) - Firestore + Auth
+- **Hosting:** Vercel
+
+### Flutter Shell
+- **WebView:** flutter_inappwebview
 - **Payment:** RevenueCat + App Store IAP
-- **Analytics:** Firebase Analytics + Crashlytics
+- **Notifications:** Firebase Cloud Messaging
 
 ## Getting Started
 
 ### Prerequisites
 
-- Flutter SDK 3.x
+- Node.js 20+
+- Flutter SDK 3.24+
 - Xcode 15+
-- CocoaPods
 - Firebase CLI
 
-### Setup
+### Web App Setup
 
 ```bash
+cd web
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run tests
+npm test
+```
+
+### Flutter Shell Setup
+
+```bash
+cd flutter-shell
+
 # Install dependencies
 flutter pub get
 
@@ -46,32 +101,33 @@ flutter run
 ## Project Structure
 
 ```
-lib/
-├── main.dart
-├── app/
-│   ├── app.dart
-│   └── router.dart
-├── features/
-│   ├── auth/
-│   ├── mission/
-│   ├── group/
-│   └── subscription/
-├── shared/
-│   ├── providers/
-│   ├── services/
-│   └── widgets/
-└── core/
-    ├── constants/
-    ├── theme/
-    └── utils/
+barm/
+├── web/                    # Next.js Web App
+│   ├── src/
+│   │   ├── app/           # App Router pages
+│   │   ├── components/    # UI components
+│   │   ├── lib/           # Utilities & Firebase
+│   │   └── hooks/         # Custom hooks
+│   └── package.json
+│
+├── flutter-shell/          # Flutter Shell (minimal)
+│   ├── lib/
+│   │   ├── main.dart
+│   │   ├── webview/       # WebView configuration
+│   │   ├── bridge/        # Native Bridge
+│   │   └── subscription/  # RevenueCat integration
+│   └── pubspec.yaml
+│
+├── docs/                   # Documentation
+└── .github/                # CI/CD workflows
 ```
 
 ## Documentation
 
 - [Brainstorming](docs/brainstorming.md) - Phase 1: アイデア検証
 - [Strategy](docs/strategy.md) - Phase 2: MVP・技術スタック
-- [PRD](docs/prd.md) - Phase 3: 要件定義
-- [Tasks](docs/tasks.md) - Phase 3: タスク分解
+- [Architecture](docs/architecture.md) - Phase 5: 技術設計
+- [Test Strategy](docs/test-strategy.md) - Phase 6: テスト戦略
 
 ## License
 

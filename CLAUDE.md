@@ -6,58 +6,93 @@
 
 ## Tech Stack
 
-- Flutter 3.x + Riverpod (状態管理)
-- Firebase (Firestore + Auth + FCM + Analytics + Crashlytics)
-- RevenueCat + App Store IAP
+### WebView + Flutter Shell 方式
+
+- **Web App:** Next.js 14 (App Router) + React + TailwindCSS
+- **Mobile Shell:** Flutter (WebView only) + RevenueCat
+- **Backend:** Firebase (Web SDK) - Firestore + Auth
+- **Payment:** RevenueCat (Flutter側) + App Store IAP
+- **Hosting:** Vercel
 
 ## Architecture
 
-Feature-first architecture with Riverpod for state management.
+### Web App (Next.js)
 
 ```
-lib/
-├── main.dart           # Entry point
-├── app/                # App configuration, routing
-├── features/           # Feature modules
-│   ├── auth/          # Authentication
-│   ├── mission/       # Mission tracking
-│   ├── group/         # Group features
-│   └── subscription/  # Payment/subscription
-├── shared/            # Shared components
-│   ├── providers/     # Global providers
-│   ├── services/      # API services
-│   └── widgets/       # Reusable widgets
-└── core/              # Core utilities
-    ├── constants/     # App constants
-    ├── theme/         # Theme configuration
-    └── utils/         # Utility functions
+web/
+├── src/
+│   ├── app/                # App Router pages
+│   │   ├── (auth)/        # 認証関連ページ
+│   │   ├── missions/      # ミッション管理
+│   │   ├── groups/        # グループ機能
+│   │   └── settings/      # 設定
+│   ├── components/        # UI コンポーネント
+│   ├── lib/               # ユーティリティ
+│   │   ├── firebase/      # Firebase 設定・操作
+│   │   └── bridge/        # Flutter Bridge
+│   └── hooks/             # カスタムフック
+├── public/
+└── package.json
+```
+
+### Flutter Shell
+
+```
+flutter-shell/
+├── lib/
+│   ├── main.dart          # Entry point
+│   ├── webview/           # WebView 設定
+│   ├── bridge/            # JS Bridge (課金通信)
+│   └── subscription/      # RevenueCat 連携
+└── pubspec.yaml
 ```
 
 ## Commands
 
+### Web App (Next.js)
+
 ```bash
+cd web
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run tests
+npm test
+```
+
+### Flutter Shell
+
+```bash
+cd flutter-shell
+
 # Run app
 flutter run
 
 # Run tests
 flutter test
 
-# Analyze code
-flutter analyze
-
 # Build for iOS
 flutter build ios --release
-
-# Generate code (freezed, riverpod_generator)
-flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
 ## Coding Conventions
 
-- Use `freezed` for immutable data classes
-- Use `riverpod_generator` for providers
+### Web App
+- TypeScript strict mode
+- React Server Components (RSC) 活用
+- TailwindCSS for styling
+- React Query for data fetching
+
+### Flutter Shell
+- Minimal code (WebView + RevenueCat only)
 - Follow Flutter style guide
-- Write tests for business logic
 
 ## Documentation
 

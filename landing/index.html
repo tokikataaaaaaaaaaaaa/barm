@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BARM | 男5人で変わる。筋トレ×勉強習慣化アプリ</title>
+  <meta name="description" content="一人じゃ続かない。だから、男5人で変わる。筋トレと勉強を仲間と共にやりきる習慣をつくるアプリ。">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --charcoal: #1a1a1a;
+      --graphite: #2a2a2a;
+      --steel: #4a4a4a;
+      --concrete: #888;
+      --white: #f5f5f5;
+      --red: #e63946;
+      --red-dark: #c62828;
+      --red-glow: rgba(230, 57, 70, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--black);
+      color: var(--white);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--red);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.1s ease;
+      mix-blend-mode: difference;
+    }
+
+    .cursor.hover {
+      transform: scale(2);
+      background: var(--red-glow);
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: linear-gradient(to bottom, var(--black), transparent);
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.2em;
+      color: var(--white);
+      text-decoration: none;
+      position: relative;
+    }
+
+    .logo::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--red);
+    }
+
+    .nav-cta {
+      padding: 0.8rem 2rem;
+      background: transparent;
+      border: 2px solid var(--red);
+      color: var(--red);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .nav-cta:hover {
+      background: var(--red);
+      color: var(--white);
+      box-shadow: 0 0 30px var(--red-glow);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 6rem 2rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse at 30% 20%, var(--red-glow) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(42, 42, 42, 0.5) 0%, transparent 50%),
+        linear-gradient(180deg, var(--black) 0%, var(--charcoal) 100%);
+    }
+
+    /* Grid lines */
+    .grid-lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(to right, var(--graphite) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--graphite) 1px, transparent 1px);
+      background-size: 80px 80px;
+      opacity: 0.3;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 1000px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      background: var(--graphite);
+      color: var(--red);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      border-left: 3px solid var(--red);
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem, 12vw, 10rem);
+      line-height: 0.9;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title .highlight {
+      color: var(--red);
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-title .highlight::after {
+      content: '';
+      position: absolute;
+      bottom: 0.1em;
+      left: 0;
+      width: 100%;
+      height: 0.15em;
+      background: var(--red);
+      opacity: 0.3;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 900;
+      margin-bottom: 2rem;
+      color: var(--concrete);
+    }
+
+    .hero-copy {
+      font-size: 1.1rem;
+      color: var(--concrete);
+      max-width: 600px;
+      margin: 0 auto 3rem;
+      line-height: 1.8;
+    }
+
+    /* Five members indicator */
+    .five-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .member-dot {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--steel);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      color: var(--steel);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .member-dot.active {
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: 0 0 20px var(--red-glow);
+    }
+
+    .member-dot::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--red-glow);
+      opacity: 0;
+      transform: scale(1.5);
+      transition: all 0.3s ease;
+    }
+
+    .member-dot.active::before {
+      opacity: 1;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.3); opacity: 0; }
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.2rem 3rem;
+      background: var(--red);
+      color: var(--white);
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-cta::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .hero-cta:hover::before {
+      left: 100%;
+    }
+
+    .hero-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 40px var(--red-glow);
+    }
+
+    .hero-cta svg {
+      width: 24px;
+      height: 24px;
+      transition: transform 0.3s ease;
+    }
+
+    .hero-cta:hover svg {
+      transform: translateX(5px);
+    }
+
+    /* Scroll indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 3rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--steel);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 60px;
+      background: linear-gradient(to bottom, var(--red), transparent);
+      animation: scrollDown 2s infinite;
+    }
+
+    @keyframes scrollDown {
+      0% { transform: scaleY(0); transform-origin: top; }
+      50% { transform: scaleY(1); transform-origin: top; }
+      50.1% { transform: scaleY(1); transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; }
+    }
+
+    /* Problem Section */
+    .problem {
+      padding: 8rem 4rem;
+      background: var(--charcoal);
+      position: relative;
+    }
+
+    .problem::before {
+      content: '"';
+      position: absolute;
+      top: 2rem;
+      left: 4rem;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20rem;
+      color: var(--graphite);
+      line-height: 1;
+    }
+
+    .problem-content {
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 10;
+    }
+
+    .problem-quote {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .problem-quote .strike {
+      text-decoration: line-through;
+      color: var(--steel);
+    }
+
+    .problem-author {
+      color: var(--concrete);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .problem-author::before {
+      content: '';
+      width: 40px;
+      height: 2px;
+      background: var(--red);
+    }
+
+    /* Features Section */
+    .features {
+      padding: 8rem 4rem;
+      background: var(--black);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .section-number {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 6rem;
+      color: var(--graphite);
+      line-height: 1;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      color: var(--concrete);
+      font-size: 1.1rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--charcoal);
+      padding: 3rem 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .feature-card:hover {
+      border-left-color: var(--red);
+      transform: translateX(10px);
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, var(--graphite), transparent);
+    }
+
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      background: var(--graphite);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+
+    .feature-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .feature-desc {
+      color: var(--concrete);
+      line-height: 1.8;
+    }
+
+    /* How it works */
+    .how-it-works {
+      padding: 8rem 4rem;
+      background: linear-gradient(180deg, var(--black) 0%, var(--charcoal) 100%);
+    }
+
+    .steps {
+      max-width: 1000px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      left: 40px;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: var(--graphite);
+    }
+
+    .step {
+      display: flex;
+      gap: 3rem;
+      margin-bottom: 4rem;
+      opacity: 0;
+      transform: translateX(-30px);
+      transition: all 0.6s ease;
+    }
+
+    .step.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .step-number {
+      width: 80px;
+      height: 80px;
+      background: var(--black);
+      border: 3px solid var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--red);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .step-content h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-content p {
+      color: var(--concrete);
+      line-height: 1.8;
+    }
+
+    /* Pricing */
+    .pricing {
+      padding: 8rem 4rem;
+      background: var(--charcoal);
+    }
+
+    .pricing-cards {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      background: var(--black);
+      padding: 3rem;
+      flex: 1;
+      min-width: 280px;
+      max-width: 400px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .pricing-card.featured {
+      border: 2px solid var(--red);
+      transform: scale(1.05);
+    }
+
+    .pricing-card.featured::before {
+      content: 'POPULAR';
+      position: absolute;
+      top: -1rem;
+      right: 2rem;
+      background: var(--red);
+      padding: 0.3rem 1rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+
+    .pricing-label {
+      color: var(--concrete);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .pricing-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 4rem;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-price span {
+      font-size: 1.5rem;
+      color: var(--concrete);
+    }
+
+    .pricing-note {
+      color: var(--red);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features li {
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--graphite);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .pricing-features li::before {
+      content: '//';
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .pricing-features li.disabled {
+      color: var(--steel);
+      text-decoration: line-through;
+    }
+
+    .pricing-features li.disabled::before {
+      content: '×';
+      color: var(--steel);
+    }
+
+    .pricing-btn {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      background: transparent;
+      border: 2px solid var(--steel);
+      color: var(--white);
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .pricing-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .pricing-card.featured .pricing-btn {
+      background: var(--red);
+      border-color: var(--red);
+    }
+
+    .pricing-card.featured .pricing-btn:hover {
+      background: var(--red-dark);
+    }
+
+    /* CTA Section */
+    .cta-section {
+      padding: 10rem 4rem;
+      background: var(--black);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--red-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 8vw, 6rem);
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .cta-subtitle {
+      font-size: 1.3rem;
+      color: var(--concrete);
+      margin-bottom: 3rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .cta-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 4rem;
+      background: var(--red);
+      color: var(--white);
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      position: relative;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .cta-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 60px var(--red-glow);
+    }
+
+    /* Footer */
+    footer {
+      padding: 4rem;
+      background: var(--charcoal);
+      border-top: 1px solid var(--graphite);
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.2em;
+    }
+
+    .footer-tagline {
+      color: var(--steel);
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+
+    .footer-links a {
+      color: var(--concrete);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--red);
+    }
+
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      nav {
+        padding: 1rem 2rem;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+      }
+
+      .hero {
+        padding: 8rem 1.5rem;
+      }
+
+      .problem, .features, .how-it-works, .pricing, .cta-section {
+        padding: 5rem 1.5rem;
+      }
+
+      .problem::before {
+        font-size: 10rem;
+        left: 1rem;
+      }
+
+      .member-dot {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+      }
+
+      .five-indicator {
+        gap: 0.5rem;
+      }
+
+      .steps::before {
+        left: 25px;
+      }
+
+      .step {
+        gap: 1.5rem;
+      }
+
+      .step-number {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+      }
+
+      .pricing-card.featured {
+        transform: scale(1);
+      }
+
+      footer {
+        padding: 2rem 1.5rem;
+      }
+
+      .footer-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .cursor {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Custom Cursor -->
+  <div class="cursor"></div>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="#" class="logo">BARM</a>
+    <a href="#download" class="nav-cta">始める</a>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="grid-lines"></div>
+
+    <div class="hero-content">
+      <div class="hero-tag">男性特化 習慣化アプリ</div>
+
+      <h1 class="hero-title">
+        BE A<br>
+        <span class="highlight">REAL MAN</span>
+      </h1>
+
+      <p class="hero-subtitle">一人じゃ続かない。だから、男5人で変わる。</p>
+
+      <p class="hero-copy">
+        筋トレと勉強を仲間と共にやりきる。<br>
+        記録を共有し、互いの努力が見えるから、続く。
+      </p>
+
+      <!-- Five members indicator -->
+      <div class="five-indicator">
+        <div class="member-dot active">1</div>
+        <div class="member-dot active">2</div>
+        <div class="member-dot active">3</div>
+        <div class="member-dot active">4</div>
+        <div class="member-dot active">5</div>
+      </div>
+
+      <a href="#download" class="hero-cta">
+        今すぐ始める
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+
+    <div class="scroll-indicator">
+      <span>SCROLL</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section class="problem">
+    <div class="problem-content fade-in">
+      <p class="problem-quote">
+        <span class="strike">明日からやる</span><br>
+        <span class="strike">今日は疲れてるから</span><br>
+        <span class="strike">また来週から始める</span><br><br>
+        その言い訳、もう終わりにしないか？
+      </p>
+      <p class="problem-author">20〜30代男性の、よくある挫折パターン</p>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="section-header fade-in">
+      <div class="section-number">01</div>
+      <h2 class="section-title">CORE FEATURES</h2>
+      <p class="section-subtitle">本気で変わりたい男のための機能</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">💪</div>
+        <h3 class="feature-title">ミッション設定</h3>
+        <p class="feature-desc">
+          筋トレ・勉強の目標を自由に設定。腕立て50回、英語30分、読書10ページ。
+          自分だけのミッションを作れ。
+        </p>
+      </div>
+
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📊</div>
+        <h3 class="feature-title">記録トラッキング</h3>
+        <p class="feature-desc">
+          毎日の達成を記録。ストリーク（連続達成日数）が可視化され、
+          途切れさせたくない気持ちが生まれる。
+        </p>
+      </div>
+
+      <div class="feature-card fade-in">
+        <div class="feature-icon">👥</div>
+        <h3 class="feature-title">仲間の記録が見える</h3>
+        <p class="feature-desc">
+          5人の仲間がどれだけやったか、リアルタイムで見える。
+          あいつが頑張ってるなら、俺も負けられない。
+        </p>
+      </div>
+
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔥</div>
+        <h3 class="feature-title">達成で割引</h3>
+        <p class="feature-desc">
+          目標を達成すれば、翌月の課金が100円に。
+          頑張った男だけが得をする、フェアな仕組み。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works">
+    <div class="section-header fade-in">
+      <div class="section-number">02</div>
+      <h2 class="section-title">HOW IT WORKS</h2>
+      <p class="section-subtitle">3ステップで仲間と繋がる</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">01</div>
+        <div class="step-content">
+          <h3>グループを作る or 参加する</h3>
+          <p>招待コードでチームに参加。友達を誘うか、
+          同じ目標を持つ仲間を見つけろ。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">02</div>
+        <div class="step-content">
+          <h3>自分のミッションを設定</h3>
+          <p>筋トレでも勉強でも、自分の目標を決める。
+          現実的な数字から始めて、徐々に上げていけ。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">03</div>
+        <div class="step-content">
+          <h3>毎日記録、仲間と共有</h3>
+          <p>やったことを記録するだけ。仲間の記録も見える。
+          互いの努力が、最高のモチベーションになる。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="section-header fade-in">
+      <div class="section-number">03</div>
+      <h2 class="section-title">PRICING</h2>
+      <p class="section-subtitle">達成者は報われる料金体系</p>
+    </div>
+
+    <div class="pricing-cards">
+      <div class="pricing-card fade-in">
+        <div class="pricing-label">BASIC</div>
+        <h3 class="pricing-name">無料プラン</h3>
+        <div class="pricing-price">¥0<span>/月</span></div>
+        <p class="pricing-note">&nbsp;</p>
+        <ul class="pricing-features">
+          <li>ミッション設定</li>
+          <li>記録トラッキング</li>
+          <li>ストリーク表示</li>
+          <li class="disabled">グループ機能</li>
+          <li class="disabled">仲間の記録閲覧</li>
+        </ul>
+        <a href="#download" class="pricing-btn">無料で始める</a>
+      </div>
+
+      <div class="pricing-card featured fade-in">
+        <div class="pricing-label">PREMIUM</div>
+        <h3 class="pricing-name">プレミアム</h3>
+        <div class="pricing-price">¥300<span>/月</span></div>
+        <p class="pricing-note">目標達成で翌月¥100</p>
+        <ul class="pricing-features">
+          <li>ミッション設定</li>
+          <li>記録トラッキング</li>
+          <li>ストリーク表示</li>
+          <li>グループ機能</li>
+          <li>仲間の記録閲覧</li>
+        </ul>
+        <a href="#download" class="pricing-btn">プレミアムで始める</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section" id="download">
+    <h2 class="cta-title">
+      本気で変わる準備は<br>できてるか？
+    </h2>
+    <p class="cta-subtitle">男5人で、筋トレと勉強を習慣にしろ。</p>
+    <a href="#" class="cta-button">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+      </svg>
+      App Storeでダウンロード
+    </a>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div>
+        <div class="footer-logo">BARM</div>
+        <p class="footer-tagline">Be A Real Man</p>
+      </div>
+      <div class="footer-links">
+        <a href="#">利用規約</a>
+        <a href="#">プライバシーポリシー</a>
+        <a href="#">お問い合わせ</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.querySelector('.cursor');
+
+    document.addEventListener('mousemove', (e) => {
+      cursor.style.left = e.clientX - 10 + 'px';
+      cursor.style.top = e.clientY - 10 + 'px';
+    });
+
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+    });
+
+    // Scroll animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.fade-in, .step').forEach(el => {
+      observer.observe(el);
+    });
+
+    // Member dots animation
+    const memberDots = document.querySelectorAll('.member-dot');
+    let currentDot = 0;
+
+    setInterval(() => {
+      memberDots.forEach(dot => dot.classList.remove('active'));
+
+      for (let i = 0; i <= currentDot; i++) {
+        memberDots[i].classList.add('active');
+      }
+
+      currentDot = (currentDot + 1) % 5;
+    }, 800);
+
+    // Stagger animation for feature cards
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach((card, index) => {
+      card.style.transitionDelay = `${index * 0.1}s`;
+    });
+  </script>
+</body>
+</html>

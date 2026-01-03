@@ -21,6 +21,10 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# ============================================
+# Flutter Shell
+# ============================================
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
@@ -29,7 +33,7 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+flutter-shell/build/
 
 # Symbolication related
 app.*.symbols
@@ -41,3 +45,51 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ============================================
+# Web App (Next.js)
+# ============================================
+
+# Dependencies
+web/node_modules/
+
+# Next.js build output
+web/.next/
+web/out/
+
+# Production
+web/build/
+
+# Testing
+web/coverage/
+
+# Environment variables
+web/.env
+web/.env.local
+web/.env.development.local
+web/.env.test.local
+web/.env.production.local
+
+# Vercel
+web/.vercel
+
+# TypeScript
+web/*.tsbuildinfo
+web/next-env.d.ts
+
+# Playwright
+web/test-results/
+web/playwright-report/
+web/playwright/.cache/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Landing Page
+# ============================================
+landing/node_modules/
+landing/.next/
+landing/out/
