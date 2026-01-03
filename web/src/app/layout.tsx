@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Bebas_Neue, DM_Sans } from 'next/font/google'
 import { Providers } from './providers'
 import './globals.css'
 
-const inter = Inter({
+// Display font: Bold, masculine, gym-aesthetic
+const bebasNeue = Bebas_Neue({
+  weight: '400',
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-display',
+})
+
+// Body font: Clean, modern with character
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
 })
 
 export const metadata: Metadata = {
@@ -37,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ja" className={`${inter.variable} dark`} suppressHydrationWarning>
+    <html lang="ja" className={`${bebasNeue.variable} ${dmSans.variable} dark`} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
       </body>
