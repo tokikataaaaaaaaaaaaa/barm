@@ -94,10 +94,17 @@ flutter build ios --release
 - Minimal code (WebView + RevenueCat only)
 - Follow Flutter style guide
 
+## Build Progress
+
+現在のビルドフェーズは `docs/PROGRESS.md` で管理。
+
 ## Documentation
 
 See `docs/` for project documentation:
+- `PROGRESS.md` - ビルド進捗管理
 - `brainstorming.md` - Phase 1: アイデア検証
 - `strategy.md` - Phase 2: MVP・技術スタック
 - `prd.md` - Phase 3: 要件定義
 - `tasks.md` - Phase 3: タスク分解
+- `architecture.md` - Phase 5: アーキテクチャ設計
+- `test-strategy.md` - Phase 6: テスト戦略
