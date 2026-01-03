@@ -1,11 +1,16 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { FullPageSpinner } from '@/components/shared/loading-spinner'
+import { BottomNav } from '@/components/shared/bottom-nav'
 
-export default function RootPage() {
+interface MainLayoutProps {
+  children: ReactNode
+}
+
+export default function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter()
   const { isLoading, isAuthenticated, hasDisplayName } = useAuth()
 
@@ -15,11 +20,22 @@ export default function RootPage() {
         router.replace('/login')
       } else if (!hasDisplayName) {
         router.replace('/nickname')
-      } else {
-        router.replace('/home')
       }
     }
   }, [isLoading, isAuthenticated, hasDisplayName, router])
 
-  return <FullPageSpinner />
+  if (isLoading) {
+    return <FullPageSpinner />
+  }
+
+  if (!isAuthenticated || !hasDisplayName) {
+    return <FullPageSpinner />
+  }
+
+  return (
+    <>
+      {children}
+      <BottomNav />
+    </>
+  )
 }
