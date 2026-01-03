@@ -1,5 +1,4 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:mocktail/mocktail.dart';
 
 /// Create a FakeFirebaseFirestore instance for testing
 ///
