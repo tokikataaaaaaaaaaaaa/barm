@@ -40,6 +40,13 @@
   - 月額300円/100円プラン設定
   - Sandbox テスト設定
 
+### Phase 8（App Store 審査前）で対応
+
+- [ ] **CI に iOS ビルドジョブを追加**
+  - `.github/workflows/ci.yml` の iOS ビルドを有効化
+  - コード署名設定（Fastlane match 等）
+  - TestFlight 自動デプロイ設定
+
 ---
 
 ## Phase Progress

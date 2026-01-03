@@ -146,25 +146,5 @@ jobs:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  flutter-build-ios:
-    name: Flutter Shell - Build iOS
-    runs-on: macos-latest
-    needs: [flutter-analyze, flutter-test]
-    defaults:
-      run:
-        working-directory: flutter-shell
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build iOS (simulator)
-        run: flutter build ios --simulator
+  # NOTE: iOS build job removed until App Store submission (Phase 8)
+  # See docs/PROGRESS.md for TODO
