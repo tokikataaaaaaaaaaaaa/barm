@@ -8,18 +8,12 @@
 
 ## 実装前TODO（外部サービス連携）
 
-### 今すぐ必要
+### 完了
 
-- [ ] **Firebase プロジェクト作成**
-  - Firebase Console でプロジェクト作成
-  - Web アプリ登録
-  - iOS アプリ登録（Bundle ID 設定）
-  - Apple Sign In 有効化（Firebase Auth）
-
-- [ ] **Apple Developer 設定**
-  - Sign In with Apple 有効化
-  - Service ID 作成
-  - 認証設定（Return URL等）
+- [x] **Firebase プロジェクト作成**
+  - ✅ Firebase Console でプロジェクト作成
+  - ✅ Web アプリ登録
+  - ✅ SDK 設定完了（`web/src/lib/firebase/config.ts`）
 
 ### Phase 5 前までに対応
 
@@ -41,6 +35,15 @@
   - Sandbox テスト設定
 
 ### Phase 8（App Store 審査前）で対応
+
+- [ ] **Apple Developer Program 登録**
+  - 年額 $99 の課金
+  - Sign In with Apple 有効化
+  - Service ID 作成・認証設定
+
+- [ ] **Firebase Auth で Apple 連携**
+  - Firebase Console → Authentication → Apple 有効化
+  - Service ID・Team ID 設定
 
 - [ ] **CI に iOS ビルドジョブを追加**
   - `.github/workflows/ci.yml` の iOS ビルドを有効化
@@ -81,10 +84,10 @@
 
 ## Next Steps
 
-1. Firebase プロジェクト作成（15分）
-2. Apple Developer で Sign In with Apple 有効化
-3. `/build-phase7-implement barm` を実行
-4. TDD サイクルで実装を進める
+1. ~~Firebase プロジェクト作成~~ ✅ 完了
+2. Phase 7 実装開始
+3. 開発中は仮の認証（メール/パスワード等）でテスト
+4. 実装完了後 → Apple Developer 登録 → Apple Sign In 有効化
 
 ---
 
