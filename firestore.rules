@@ -72,5 +72,69 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow write: if false; // Cloud Functions only
     }
+
+    // ============================================================
+    // Time-Boxed Challenge Collections
+    // ============================================================
+
+    // Challenges - read-only for authenticated users (created by admin/Cloud Functions)
+    match /challenges/{challengeId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Admin/Cloud Functions only
+    }
+
+    // Challenge Teams - read-only for authenticated users
+    match /challengeTeams/{teamId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Cloud Functions only (created when challenge starts)
+    }
+
+    // Challenge Participations
+    match /challengeParticipations/{participationId} {
+      // Authenticated users can read their own participation
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+
+      // Authenticated users can read team members' participations
+      allow read: if isAuthenticated() &&
+                    resource.data.teamId != null &&
+                    exists(/databases/$(database)/documents/challengeParticipations/$(request.auth.uid + '_' + resource.data.challengeId));
+
+      // Users can create their own participation
+      allow create: if isAuthenticated() &&
+                      isOwner(request.resource.data.userId) &&
+                      request.resource.data.achievedDays == 0 &&
+                      request.resource.data.teamId == null;
+
+      // Users can update their own participation (goal, notification settings)
+      allow update: if isAuthenticated() &&
+                      isOwner(resource.data.userId) &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.challengeId == resource.data.challengeId;
+
+      // Users can delete (withdraw) only if challenge hasn't started
+      allow delete: if isAuthenticated() &&
+                      isOwner(resource.data.userId) &&
+                      get(/databases/$(database)/documents/challenges/$(resource.data.challengeId)).data.status == 'upcoming';
+    }
+
+    // Challenge Records
+    match /challengeRecords/{recordId} {
+      // Helper to get participation owner
+      function getParticipationOwner(participationId) {
+        return get(/databases/$(database)/documents/challengeParticipations/$(participationId)).data.userId;
+      }
+
+      // Users can read their own records
+      allow read: if isAuthenticated() && getParticipationOwner(resource.data.participationId) == request.auth.uid;
+
+      // Users can read team members' records (for calendar view)
+      allow read: if isAuthenticated();
+
+      // Users can create/update their own records
+      allow create, update: if isAuthenticated() &&
+                              getParticipationOwner(request.resource.data.participationId) == request.auth.uid;
+
+      allow delete: if false; // Records cannot be deleted
+    }
   }
 }
