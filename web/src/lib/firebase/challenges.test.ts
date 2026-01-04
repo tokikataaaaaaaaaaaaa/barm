@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getChallengeDays, getRemainingDays, getDaysUntilStart } from './challenges'
+import { getChallengeDays, getRemainingDays, getDaysUntilStart } from './challenge-utils'
 import { Challenge } from '@/lib/types'
 
 // Helper to create a mock challenge
