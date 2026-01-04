@@ -7,12 +7,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/lib/hooks/use-auth'
 import { useMissions } from '@/lib/hooks/use-missions'
 import { useTodayRecords, useUpsertRecord } from '@/lib/hooks/use-records'
+import { useChallenges, useMyParticipations } from '@/lib/hooks/use-challenges'
 import { getTodayDateString } from '@/lib/firebase/records'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Avatar } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { MissionCard } from '@/components/features/mission/mission-card'
+import { ChallengeCard, CHALLENGE_CONFIG, formatDateRange } from '@/components/features/challenge'
 import { FeedCard, LiveIndicator } from '@/components/patterns/feed-card'
 import { LoadingSpinner } from '@/components/shared/loading-spinner'
 import { EmptyState } from '@/components/shared/empty-state'
@@ -29,15 +32,14 @@ const MOCK_FEED = [
   { id: '8', user: { name: 'Hiro' }, mission: { name: 'ストレッチ', value: 10, unit: '分', icon: '🤸' }, timeAgo: '30分前' },
 ]
 
-type ViewMode = 'feed' | 'missions'
-
 export default function HomePage() {
   const router = useRouter()
   const { user } = useAuth()
   const { data: missions, isLoading: isMissionsLoading } = useMissions()
   const { data: todayRecords } = useTodayRecords()
+  const { data: challenges, isLoading: isChallengesLoading } = useChallenges()
+  const { data: myParticipations } = useMyParticipations()
   const upsertRecord = useUpsertRecord()
-  const [viewMode, setViewMode] = useState<ViewMode>('feed')
   const [feedItems, setFeedItems] = useState(MOCK_FEED.slice(0, 4))
 
   // Simulate new items appearing
@@ -84,6 +86,28 @@ export default function HomePage() {
     }
   }, [missions, todayRecords, recordsByMission])
 
+  // Challenge helpers
+  const participatingChallengeIds = new Set(myParticipations?.map((p) => p.challengeId) || [])
+  const upcomingChallenges = challenges?.filter((c) => c.status === 'upcoming') || []
+  const activeChallenges = challenges?.filter((c) => c.status === 'active') || []
+  const myActiveParticipation = myParticipations?.find((p) =>
+    activeChallenges.some((c) => c.id === p.challengeId)
+  )
+  const myActiveChallenge = activeChallenges.find((c) => participatingChallengeIds.has(c.id))
+
+  const handleChallengeAction = (challengeId: string, isJoined: boolean) => {
+    if (isJoined) {
+      const challenge = challenges?.find((c) => c.id === challengeId)
+      if (challenge?.status === 'upcoming') {
+        router.push(`/challenges/${challengeId}/waiting`)
+      } else {
+        router.push(`/challenges/${challengeId}`)
+      }
+    } else {
+      router.push(`/challenges/${challengeId}/join`)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -100,167 +124,127 @@ export default function HomePage() {
       </header>
 
       <main className="container-mobile pb-24">
-        {/* User Status Card */}
+        {/* Challenge Section - Primary */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="py-6"
         >
-          <div className="rounded-2xl bg-gradient-to-br from-card via-card to-secondary-800/30 border border-border p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-body-sm text-muted-foreground">
-                  {new Date().toLocaleDateString('ja-JP', {
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'short',
-                  })}
-                </p>
-                <p className="font-display text-xl tracking-wide mt-1">
-                  {user?.displayName || 'GUEST'}
-                </p>
-              </div>
-              {missions && missions.length > 0 && (
-                <div className="text-right">
-                  <p className="font-display text-3xl text-accent">{completedCount}/{totalCount}</p>
-                  <p className="text-caption text-muted-foreground">達成</p>
-                </div>
-              )}
-            </div>
-            {missions && missions.length > 0 && (
-              <div>
-                <div className="flex justify-between text-caption text-muted-foreground mb-2">
-                  <span>今日の進捗</span>
-                  <span>{progressPercent}%</span>
-                </div>
-                <Progress value={progressPercent} max={100} />
-              </div>
-            )}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl tracking-wide">CHALLENGE</h2>
+            <Link href="/challenges">
+              <Button variant="ghost" size="sm">すべて見る →</Button>
+            </Link>
           </div>
+
+          {isChallengesLoading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : myActiveChallenge ? (
+            // Show active challenge if participating
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <Card
+                className="p-5 cursor-pointer hover:border-accent/50 transition-colors"
+                onClick={() => router.push(`/challenges/${myActiveChallenge.id}`)}
+              >
+                <div className="flex items-center gap-4 mb-3">
+                  <span className="text-4xl">{CHALLENGE_CONFIG[myActiveChallenge.type].icon}</span>
+                  <div className="flex-1">
+                    <p className="text-body font-medium">{CHALLENGE_CONFIG[myActiveChallenge.type].label}</p>
+                    <p className="text-body-sm text-muted-foreground">
+                      {formatDateRange(myActiveChallenge.startDate, myActiveChallenge.endDate)}
+                    </p>
+                  </div>
+                  <Badge variant="success">参加中</Badge>
+                </div>
+                {myActiveParticipation && (
+                  <div className="pt-3 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{myActiveParticipation.goal.icon}</span>
+                      <span className="text-body-sm">{myActiveParticipation.goal.name}</span>
+                      <span className="text-body-sm text-muted-foreground ml-auto">
+                        {myActiveParticipation.achievedDays}日達成
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          ) : upcomingChallenges.length > 0 ? (
+            // Show upcoming challenges
+            <div className="space-y-3">
+              {upcomingChallenges.slice(0, 2).map((challenge) => {
+                const isJoined = participatingChallengeIds.has(challenge.id)
+                return (
+                  <ChallengeCard
+                    key={challenge.id}
+                    challenge={challenge}
+                    isJoined={isJoined}
+                    onJoin={() => handleChallengeAction(challenge.id, isJoined)}
+                  />
+                )
+              })}
+            </div>
+          ) : (
+            <Card className="p-6 text-center">
+              <p className="text-4xl mb-3">🏆</p>
+              <p className="text-body text-muted-foreground">
+                現在募集中のチャレンジはありません
+              </p>
+              <p className="text-body-sm text-muted-foreground mt-1">
+                次のチャレンジをお楽しみに!
+              </p>
+            </Card>
+          )}
         </motion.section>
 
-        {/* Tab Switcher */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setViewMode('feed')}
-            className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all ${
-              viewMode === 'feed'
-                ? 'bg-accent text-accent-foreground shadow-glow'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-            }`}
-          >
-            🔥 みんなの記録
-          </button>
-          <button
-            onClick={() => setViewMode('missions')}
-            className={`flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all ${
-              viewMode === 'missions'
-                ? 'bg-accent text-accent-foreground shadow-glow'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-            }`}
-          >
-            📋 自分のミッション
-          </button>
-        </div>
+        {/* Live Feed Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl tracking-wide">LIVE FEED</h2>
+            <Badge variant="secondary" size="sm">
+              {feedItems.length} 件
+            </Badge>
+          </div>
 
-        {/* Content */}
-        <AnimatePresence mode="wait">
-          {viewMode === 'feed' ? (
-            <motion.section
-              key="feed"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl tracking-wide">LIVE FEED</h2>
-                <Badge variant="secondary" size="sm">
-                  {feedItems.length} 件
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                <AnimatePresence>
-                  {feedItems.map((item, index) => (
-                    <FeedCard
-                      key={item.id}
-                      user={item.user}
-                      mission={item.mission}
-                      timeAgo={item.timeAgo}
-                      isNew={index === feedItems.length - 1 && feedItems.length > 4}
-                      index={Math.min(index, 4)}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {/* Motivation message */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="mt-8 text-center py-6 border-t border-border"
-              >
-                <p className="text-muted-foreground text-body-sm">
-                  みんな頑張ってる。
-                </p>
-                <p className="font-display text-lg tracking-wide text-accent mt-1">
-                  俺も負けてられない。
-                </p>
-                <Button
-                  variant="accent"
-                  className="mt-4"
-                  onClick={() => setViewMode('missions')}
-                >
-                  記録をつける →
-                </Button>
-              </motion.div>
-            </motion.section>
-          ) : (
-            <motion.section
-              key="missions"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl tracking-wide">MY MISSIONS</h2>
-                <Link href="/mission/create">
-                  <Button variant="ghost" size="sm">+ 追加</Button>
-                </Link>
-              </div>
-
-              {isMissionsLoading ? (
-                <div className="flex justify-center py-12">
-                  <LoadingSpinner />
-                </div>
-              ) : missions && missions.length > 0 ? (
-                <div className="space-y-3">
-                  {missions.map((mission) => (
-                    <MissionCard
-                      key={mission.id}
-                      mission={mission}
-                      record={recordsByMission.get(mission.id)}
-                      onRecordUpdate={(value) => handleRecordUpdate(mission.id, value)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon="📋"
-                  title="ミッションがありません"
-                  description="最初のミッションを作成して、習慣化を始めましょう"
-                  action={{
-                    label: 'ミッションを作成',
-                    onClick: () => router.push('/mission/create'),
-                  }}
+          <div className="space-y-3">
+            <AnimatePresence>
+              {feedItems.slice(0, 5).map((item, index) => (
+                <FeedCard
+                  key={item.id}
+                  user={item.user}
+                  mission={item.mission}
+                  timeAgo={item.timeAgo}
+                  isNew={index === feedItems.length - 1 && feedItems.length > 4}
+                  index={Math.min(index, 4)}
                 />
-              )}
-            </motion.section>
-          )}
-        </AnimatePresence>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Motivation message */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-6 text-center py-4"
+          >
+            <p className="text-muted-foreground text-body-sm">
+              みんな頑張ってる。
+            </p>
+            <p className="font-display text-lg tracking-wide text-accent mt-1">
+              俺も負けてられない。
+            </p>
+          </motion.div>
+        </motion.section>
       </main>
     </div>
   )
